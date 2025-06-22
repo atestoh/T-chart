@@ -225,7 +225,7 @@ h1 {
 
 
 /* Responsive Adjustments */
-@media (max-width: 768px) {
+@media (max-width: 520px) {
     body { padding: 10px; }
     .container { padding: 15px; }
     .t-chart-wrapper, .sections-grid-container { grid-template-columns: 1fr; }
