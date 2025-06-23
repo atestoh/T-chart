@@ -39,7 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return total;
     };
     
-    // --- Section & Item Creation ---
     const createSection = (providerIndex, title, pairId, row, notes = '') => {
         const sectionEl = document.createElement('div');
         sectionEl.className = 'section-box';
@@ -101,7 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDisplays();
     };
 
-    // --- Core Display & Calculation Logic ---
     const updateDisplays = () => {
         let p1Total = 0, p2Total = 0;
         if (isComparisonModeActive) {
@@ -126,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         p2TotalSpan.textContent = `$${p2Total.toFixed(2)}`;
         
         const formatSavings = (amount) => {
-            const sign = amount >= 0 ? '+' : ''; // Show + for savings and zero
+            const sign = amount >= 0 ? '+' : '';
             return `${sign}$${amount.toFixed(2)}`;
         };
 
@@ -161,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- Event Handlers ---
     const handleSectionClick = (e) => {
         if (!isComparisonModeActive || e.target.closest('button, input, textarea')) return;
         e.currentTarget.classList.toggle('is-selected');
@@ -285,10 +282,25 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { saveDataBtn.textContent = 'Save'; }, 1500);
     };
 
+    // --- Data Persistence ---
     const loadState = () => {
         const dataString = localStorage.getItem('tChartData');
-        if (!dataString) { alert('No saved data found.'); return; }
+        if (!dataString) {
+            // If there's no data at all, force a reset to the default template.
+            init(true);
+            return;
+        }
+
         const data = JSON.parse(dataString);
+
+        // *** THIS IS THE CRITICAL FIX ***
+        // If the saved data is empty/corrupted, ignore it and load the default template.
+        if (!data || !data.categories || data.categories.length === 0) {
+            init(true);
+            return;
+        }
+
+        // If we get here, the data is valid, so we load it.
         sectionsGrid.innerHTML = '';
         pairCounter = data.pairCounter || 0;
         p1NameInput.value = data.provider1Name || 'Provider 1';
@@ -300,7 +312,6 @@ document.addEventListener('DOMContentLoaded', () => {
             cat.items.forEach(item => addCustomItem(itemsContainer, item));
         });
         updateDisplays();
-        alert('Data loaded successfully!');
     };
     
     const clearAllData = () => {
@@ -313,19 +324,22 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDataBtn.addEventListener('click', loadState);
     clearDataBtn.addEventListener('click', clearAllData);
     
-    // --- Init ---
+    // --- App Initialization ---
     const init = (isReset = false) => {
-        if (!isReset && localStorage.getItem('tChartData')) {
+        // If it's not a forced reset, try to load saved data first.
+        if (!isReset) {
             loadState();
             return;
         }
+
+        // This block now only runs on a forced reset (isReset = true)
+        // or when loadState() finds empty data.
         sectionsGrid.innerHTML = ''; 
         pairCounter = 0;
         p1NameInput.value = 'You'; 
         p2NameInput.value = 'TELUS';
         summaryNotes.value = '';
-
-        // FIX: Added the default categories back into the init function
+        
         const initialPairs = [
             { p1Title: 'Mobility', p2Title: 'Mobility' }, 
             { p1Title: 'Internet/TV', p2Title: 'Internet' },
@@ -343,5 +357,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDisplays();
     };
     
+    // Start the application
     init();
 });
