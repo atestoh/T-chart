@@ -89,7 +89,7 @@ h1 {
     background-color: var(--color-surface); display: flex; flex-direction: column;
     box-shadow: var(--shadow-md);
     transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
-    position: relative; /* For positioning the close button */
+    position: relative;
 }
 .comparison-mode-active .section-box { cursor: pointer; }
 .comparison-mode-active .section-box:hover {
@@ -142,7 +142,6 @@ h1 {
 .savings-positive { color: var(--color-success); }
 .savings-negative { color: var(--color-danger); }
 
-/* NEW: Individual Close Button Styles */
 .clear-result-btn {
     position: absolute; top: 50%; right: 0; transform: translateY(-50%);
     background: #e9ecef; color: var(--color-text-secondary); border: none;

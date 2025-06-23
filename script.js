@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return total;
     };
     
+    // --- Section & Item Creation ---
     const createSection = (providerIndex, title, pairId, row, notes = '') => {
         const sectionEl = document.createElement('div');
         sectionEl.className = 'section-box';
@@ -100,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDisplays();
     };
 
+    // --- Core Display & Calculation Logic ---
     const updateDisplays = () => {
         let p1Total = 0, p2Total = 0;
         if (isComparisonModeActive) {
@@ -159,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // --- Event Handlers ---
     const handleSectionClick = (e) => {
         if (!isComparisonModeActive || e.target.closest('button, input, textarea')) return;
         e.currentTarget.classList.toggle('is-selected');
@@ -282,25 +285,15 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { saveDataBtn.textContent = 'Save'; }, 1500);
     };
 
-    // --- Data Persistence ---
     const loadState = () => {
         const dataString = localStorage.getItem('tChartData');
         if (!dataString) {
-            // If there's no data at all, force a reset to the default template.
-            init(true);
+            alert('No saved data found. Loading default template.');
+            init(true); // isReset = true
             return;
         }
 
         const data = JSON.parse(dataString);
-
-        // *** THIS IS THE CRITICAL FIX ***
-        // If the saved data is empty/corrupted, ignore it and load the default template.
-        if (!data || !data.categories || data.categories.length === 0) {
-            init(true);
-            return;
-        }
-
-        // If we get here, the data is valid, so we load it.
         sectionsGrid.innerHTML = '';
         pairCounter = data.pairCounter || 0;
         p1NameInput.value = data.provider1Name || 'Provider 1';
@@ -309,7 +302,9 @@ document.addEventListener('DOMContentLoaded', () => {
         data.categories.forEach(cat => {
             const newSection = createSection(cat.provider, cat.title, cat.pairId, cat.gridRow || 'auto', cat.notes);
             const itemsContainer = newSection.querySelector('.dynamic-items-container');
-            cat.items.forEach(item => addCustomItem(itemsContainer, item));
+            if (cat.items) {
+                cat.items.forEach(item => addCustomItem(itemsContainer, item));
+            }
         });
         updateDisplays();
     };
@@ -317,7 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearAllData = () => {
         if (confirm('Are you sure you want to clear all data? This will remove saved data and reset the board.')) {
             localStorage.removeItem('tChartData');
-            init(true);
+            init(true); // isReset = true
         }
     };
     saveDataBtn.addEventListener('click', saveState);
@@ -326,14 +321,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- App Initialization ---
     const init = (isReset = false) => {
-        // If it's not a forced reset, try to load saved data first.
-        if (!isReset) {
+        if (!isReset && localStorage.getItem('tChartData')) {
             loadState();
             return;
         }
 
-        // This block now only runs on a forced reset (isReset = true)
-        // or when loadState() finds empty data.
+        // This block runs for a clean slate.
         sectionsGrid.innerHTML = ''; 
         pairCounter = 0;
         p1NameInput.value = 'You'; 
