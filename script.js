@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- DOM Elements ---
+    // DOM Elements
     const body = document.body;
     const sectionsGrid = document.getElementById('sections-grid');
     const p1NameInput = document.getElementById('provider1-name');
@@ -19,15 +19,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const summaryBox = document.querySelector('.summary-section-box');
     const summaryNotes = document.getElementById('summaryNotes');
 
-    // --- State & Config ---
+    // State & Config
     let isComparisonModeActive = false;
     let pairCounter = 0;
-
     const ICONS = {
         delete: `<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg>`,
         mirror: `<svg viewBox="0 0 24 24"><path d="M8 7v-2h2v2h-2zm-2 2h2v2h-2v-2zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2zm-2-6h2v2h-2v-2zm16-4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h-12c-1.1 0-2-.9-2-2v-2h2v2h10v-10h-10v2h-2v-2c0-1.1.9-2 2-2h12zm-8 2h2v2h-2v-2zm-4 0h2v2h-2v-2zm8 0h2v2h-2v-2zm-4 4h2v2h-2v-2zm4 0h2v2h-2v-2z"></path></svg>`
     };
 
+    // Helper Functions
     const getSectionCost = (sectionEl) => {
         if (!sectionEl) return 0;
         let total = 0;
@@ -38,8 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         return total;
     };
-    
-    // --- Section & Item Creation ---
+
     const createSection = (providerIndex, title, pairId, row, notes = '') => {
         const sectionEl = document.createElement('div');
         sectionEl.className = 'section-box';
@@ -66,10 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="notes-section"><textarea placeholder="Notes...">${notes}</textarea></div>
         `;
         sectionEl.querySelector('.delete-section-btn').addEventListener('click', () => { 
-            if (confirm('Are you sure you want to delete this category?')) { 
-                sectionEl.remove();
-                updateDisplays(); 
-            } 
+            if (confirm('Are you sure?')) { sectionEl.remove(); updateDisplays(); } 
         });
         sectionEl.querySelector('.add-custom-item-btn').addEventListener('click', (e) => addCustomItem(e.target.previousElementSibling));
         sectionEl.querySelector('.calculate-savings-btn').addEventListener('click', handleSimpleCompare);
@@ -101,67 +97,49 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDisplays();
     };
 
-    // --- Core Display & Calculation Logic ---
     const updateDisplays = () => {
         let p1Total = 0, p2Total = 0;
         if (isComparisonModeActive) {
             document.querySelectorAll('.section-box.is-selected').forEach(box => {
                 const cost = getSectionCost(box);
-                if (box.dataset.provider === '1') p1Total += cost;
-                else p2Total += cost;
+                if (box.dataset.provider === '1') p1Total += cost; else p2Total += cost;
             });
             updateComparisonPanels(p1Total, p2Total);
             summaryTitle.textContent = "Custom Comparison Summary";
         } else {
             document.querySelectorAll('.section-box').forEach(box => {
                 const cost = getSectionCost(box);
-                if (box.dataset.provider === '1') p1Total += cost;
-                else p2Total += cost;
+                if (box.dataset.provider === '1') p1Total += cost; else p2Total += cost;
             });
             summaryTitle.textContent = "Summary & Grand Totals";
         }
-
         const monthlySavings = p1Total - p2Total;
         p1TotalSpan.textContent = `$${p1Total.toFixed(2)}`;
         p2TotalSpan.textContent = `$${p2Total.toFixed(2)}`;
-        
-        const formatSavings = (amount) => {
-            const sign = amount >= 0 ? '+' : '';
-            return `${sign}$${amount.toFixed(2)}`;
-        };
-
+        const formatSavings = (amount) => `${amount >= 0 ? '+' : ''}$${amount.toFixed(2)}`;
         monthlyDiffSpan.textContent = formatSavings(monthlySavings);
         monthlyDiffSpan.className = `summary-total highlight colspan-2 ${monthlySavings >= 0 ? 'savings' : 'loss'}`;
-
         yearlyDiffSpan.textContent = formatSavings(monthlySavings * 12);
         yearlyDiffSpan.className = `summary-total colspan-2 ${monthlySavings >= 0 ? 'savings' : 'loss'}`;
-
         threeYearDiffSpan.textContent = formatSavings(monthlySavings * 36);
         threeYearDiffSpan.className = `summary-total colspan-2 ${monthlySavings >= 0 ? 'savings' : 'loss'}`;
-
         summaryBox.classList.toggle('has-savings', monthlySavings > 0);
     };
-    
+
     const updateComparisonPanels = (p1GroupTotal, p2GroupTotal) => {
         const p2Name = p2NameInput.value || 'Provider 2';
         const savings = p1GroupTotal - p2GroupTotal;
         let resultHTML = '';
-
-        if (savings > 0) {
-            resultHTML = `<div class="result savings-positive">${p2Name} is $${savings.toFixed(2)} cheaper</div>`;
-        } else if (savings < 0) {
-            resultHTML = `<div class="result savings-negative">${p2Name} is $${Math.abs(savings).toFixed(2)} more expensive</div>`;
-        } else {
-            resultHTML = `<div class="result">Costs are equal</div>`;
-        }
-        
+        if (savings > 0) resultHTML = `<div class="result savings-positive">${p2Name} is $${savings.toFixed(2)} cheaper</div>`;
+        else if (savings < 0) resultHTML = `<div class="result savings-negative">${p2Name} is $${Math.abs(savings).toFixed(2)} more expensive</div>`;
+        else resultHTML = `<div class="result">Costs are equal</div>`;
         document.querySelectorAll('.section-box.is-selected, .section-box.is-pinned').forEach(box => {
             const panel = box.querySelector('.comparison-display-panel');
             panel.innerHTML = `${resultHTML} <button class="clear-result-btn" title="Clear this result">×</button>`;
         });
     };
 
-    // --- Event Handlers ---
+    // Event Handlers
     const handleSectionClick = (e) => {
         if (!isComparisonModeActive || e.target.closest('button, input, textarea')) return;
         e.currentTarget.classList.toggle('is-selected');
@@ -177,13 +155,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const cost2 = getSectionCost(targetSection);
         const diff = cost1 - cost2;
         const display = sourceSection.querySelector('.savings-display');
-        
         display.classList.remove('savings-positive', 'savings-negative');
         let text = '';
         if (diff > 0) { text = `$${diff.toFixed(2)} more expensive`; display.classList.add('savings-negative'); }
         else if (diff < 0) { text = `$${Math.abs(diff).toFixed(2)} cheaper`; display.classList.add('savings-positive'); }
-        else { text = 'Equal cost'; }
-        
+        else text = 'Equal cost';
         display.innerHTML = `<span>${text}</span> <button class="clear-result-btn" title="Clear this result">×</button>`;
     };
     
@@ -207,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
             comparisonModeBtn.textContent = "[ Start Custom Comparison ]";
         }
         updateDisplays();
-    };
+    });
 
     const checkPinnedStatus = () => {
         const anyPinned = document.querySelector('.section-box.is-pinned');
@@ -219,13 +195,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const newPairId = `p${pairCounter}`;
         const provider = e.target.dataset.provider;
         const columnBoxes = document.querySelectorAll(`.section-box[data-provider="${provider}"]`);
-        const nextRow = columnBoxes.length + 1;
+        const nextRow = columnBoxes.length > 0 ? Math.max(...Array.from(columnBoxes).map(el => parseInt(el.style.gridRow))) + 1 : 1;
         createSection(provider, 'New Category', newPairId, nextRow);
         updateDisplays();
     };
-    
     addSectionBtns.forEach(btn => btn.addEventListener('click', handleAddSection));
-    
+
     const clearPinnedResults = () => {
         document.querySelectorAll('.section-box.is-pinned').forEach(box => {
             box.classList.remove('is-pinned');
@@ -240,9 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const sectionBox = e.target.closest('.section-box');
             if (!sectionBox) return;
             const savingsDisplay = e.target.closest('.savings-display');
-            if (savingsDisplay) {
-                savingsDisplay.innerHTML = '';
-            }
+            if (savingsDisplay) savingsDisplay.innerHTML = '';
             const panel = e.target.closest('.comparison-display-panel');
             if (panel) {
                 sectionBox.classList.remove('is-pinned');
@@ -253,13 +226,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     sectionsGrid.addEventListener('input', (e) => {
-        if (e.target.matches('.value-input, .cost-checkbox, .section-title-input, textarea')) {
-            updateDisplays();
-        }
+        if (e.target.matches('.value-input, .cost-checkbox, .section-title-input, textarea')) updateDisplays();
     });
     p1NameInput.addEventListener('input', updateDisplays);
     p2NameInput.addEventListener('input', updateDisplays);
     
+    // Data Persistence
     const saveState = () => {
         const data = {
             provider1Name: p1NameInput.value, provider2Name: p2NameInput.value,
@@ -287,13 +259,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const loadState = () => {
         const dataString = localStorage.getItem('tChartData');
-        if (!dataString) {
-            alert('No saved data found. Loading default template.');
-            init(true); // isReset = true
-            return;
-        }
-
+        if (!dataString) { init(true); return; } // Go to default if no data
         const data = JSON.parse(dataString);
+        if (!data || !data.categories || data.categories.length === 0) {
+            init(true); return; // Go to default if data is empty
+        }
         sectionsGrid.innerHTML = '';
         pairCounter = data.pairCounter || 0;
         p1NameInput.value = data.provider1Name || 'Provider 1';
@@ -302,54 +272,46 @@ document.addEventListener('DOMContentLoaded', () => {
         data.categories.forEach(cat => {
             const newSection = createSection(cat.provider, cat.title, cat.pairId, cat.gridRow || 'auto', cat.notes);
             const itemsContainer = newSection.querySelector('.dynamic-items-container');
-            if (cat.items) {
-                cat.items.forEach(item => addCustomItem(itemsContainer, item));
-            }
+            if (cat.items) cat.items.forEach(item => addCustomItem(itemsContainer, item));
         });
         updateDisplays();
     };
     
     const clearAllData = () => {
-        if (confirm('Are you sure you want to clear all data? This will remove saved data and reset the board.')) {
+        if (confirm('Are you sure? This will remove saved data and reset the board.')) {
             localStorage.removeItem('tChartData');
-            init(true); // isReset = true
+            init(true);
         }
     };
     saveDataBtn.addEventListener('click', saveState);
     loadDataBtn.addEventListener('click', loadState);
     clearDataBtn.addEventListener('click', clearAllData);
     
-    // --- App Initialization ---
+    // App Initialization
     const init = (isReset = false) => {
         if (!isReset && localStorage.getItem('tChartData')) {
             loadState();
             return;
         }
-
-        // This block runs for a clean slate.
         sectionsGrid.innerHTML = ''; 
         pairCounter = 0;
         p1NameInput.value = 'You'; 
         p2NameInput.value = 'TELUS';
         summaryNotes.value = '';
-        
         const initialPairs = [
             { p1Title: 'Mobility', p2Title: 'Mobility' }, 
             { p1Title: 'Internet/TV', p2Title: 'Internet' },
             { p1Title: 'Streaming', p2Title: 'Streaming' }, 
             { p1Title: 'Security', p2Title: 'Security' }
         ];
-
         initialPairs.forEach((pair, index) => {
             pairCounter++;
             const row = index + 1;
             createSection(1, pair.p1Title, `p${pairCounter}`, row);
             createSection(2, pair.p2Title, `p${pairCounter}`, row);
         });
-        
         updateDisplays();
     };
     
-    // Start the application
-    init();
+    init(); // Start the application
 });
