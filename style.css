@@ -89,14 +89,12 @@ h1 {
     background-color: var(--color-surface); display: flex; flex-direction: column;
     box-shadow: var(--shadow-md);
     transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative; /* For positioning the close button */
 }
-.comparison-mode-active .section-box {
-    cursor: pointer;
-    box-shadow: 0 0 0 2px transparent, var(--shadow-md);
-}
+.comparison-mode-active .section-box { cursor: pointer; }
 .comparison-mode-active .section-box:hover {
     transform: translateY(-4px);
-    box-shadow: 0 0 0 2px transparent, var(--shadow-lg);
+    box-shadow: var(--shadow-lg);
 }
 .section-box.is-selected {
     transform: scale(1.02);
@@ -130,20 +128,29 @@ h1 {
 
 /* --- Section Footer & Comparison Panel --- */
 .section-footer { padding: 15px 20px; border-top: 1px solid var(--color-divider); background-color: #fdfdff; }
-.savings-panel { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.savings-panel { display: flex; justify-content: space-between; align-items: center; gap: 10px; position: relative; }
 .calculate-savings-btn {
     background-color: var(--color-text-secondary); color: white; border: none; padding: 8px 14px; border-radius: 6px;
     font-size: 0.9em; cursor: pointer; white-space: nowrap; transition: background-color 0.2s; font-weight: 700;
 }
 .calculate-savings-btn:hover { background-color: #5a6268; }
-.savings-display { font-weight: 500; text-align: right; font-size: 0.95em; }
-.comparison-display-panel { display: none; padding-top: 15px; border-top: 1px dashed var(--color-border); margin-top: 15px; font-size: 0.95em; }
+.savings-display { font-weight: 500; text-align: right; font-size: 0.95em; flex-grow: 1; padding-right: 20px; }
+.comparison-display-panel { display: none; padding: 15px; border: 1px dashed var(--color-border); border-radius: 6px; margin-top: 15px; font-size: 0.95em; position: relative; }
 .is-selected .comparison-display-panel,
 .is-pinned .comparison-display-panel { display: block; }
-.comparison-display-panel div { margin-bottom: 5px; color: var(--color-text-secondary); }
-.comparison-display-panel .result { font-weight: 700; margin-top: 8px; font-size: 1.1em; }
+.comparison-display-panel .result { font-weight: 700; font-size: 1.1em; text-align: center; }
 .savings-positive { color: var(--color-success); }
 .savings-negative { color: var(--color-danger); }
+
+/* NEW: Individual Close Button Styles */
+.clear-result-btn {
+    position: absolute; top: 50%; right: 0; transform: translateY(-50%);
+    background: #e9ecef; color: var(--color-text-secondary); border: none;
+    width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center;
+    cursor: pointer; font-weight: bold; transition: all 0.2s ease;
+}
+.clear-result-btn:hover { background-color: var(--color-danger); color: white; }
+.is-pinned .clear-result-btn { top: 12px; right: 8px; transform: none; }
 
 .notes-section { padding: 20px; border-top: 1px solid var(--color-divider); margin-top: auto; background-color: #fdfdff; border-radius: 0 0 var(--radius) var(--radius); }
 .notes-section textarea {
@@ -157,7 +164,7 @@ h1 {
 .custom-item-box { display: grid; grid-template-columns: auto 1fr auto auto; gap: 8px; align-items: center; }
 .custom-item-box input[type="text"] {
     flex: 1; padding: 10px; border: 1px solid var(--color-border);
-    border-radius: 6px; font-size: 1em; transition: border-color 0.2s, box-shadow 0.2s;
+    border-radius: 6px; font-size: 16px; transition: border-color 0.2s, box-shadow 0.2s;
 }
 .custom-item-box input[type="text"]:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 2px #0d6efd40; }
 .mirror-item-btn {
@@ -181,7 +188,6 @@ h1 {
 }
 .add-section-btn:hover { background-color: var(--color-accent-hover); transform: translateY(-2px); box-shadow: var(--shadow-md); }
 
-
 /* --- Summary Section --- */
 .summary-section-box {
     grid-column: 1 / 3; border: 1px solid var(--color-border); border-radius: var(--radius);
@@ -201,11 +207,11 @@ h1 {
 }
 .summary-label { font-weight: 500; font-size: 1.1em; text-align: right; color: var(--color-text-secondary); }
 .summary-total { font-size: 1.75em; font-weight: 700; color: var(--color-text-primary); }
-.summary-total.negative { color: var(--color-danger); }
-.highlight { font-weight: 700; color: var(--color-accent); }
+.summary-total.savings { color: var(--color-success); }
+.summary-total.loss { color: var(--color-danger); }
+.highlight { font-weight: 700; }
 .colspan-2 { grid-column: span 2; text-align: center; }
 
-/* NEW: Styles for summary savings and notes */
 .summary-section-box.has-savings {
     border-color: var(--color-success);
     box-shadow: 0 0 15px 0 #19875440, var(--shadow-md);
@@ -225,9 +231,7 @@ h1 {
 
 
 /* Responsive Adjustments */
-@media (max-width: 768px) {
-    body { padding: 10px; }
-    .container { padding: 15px; }
+@media (max-width: 767.98px) {
     .t-chart-wrapper, .sections-grid-container { grid-template-columns: 1fr; }
     .sections-grid-container::before { display: none; }
     .provider-header:first-of-type {

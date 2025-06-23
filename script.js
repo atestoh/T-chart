@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadDataBtn = document.getElementById('loadData');
     const clearDataBtn = document.getElementById('clearData');
     const addSectionBtns = document.querySelectorAll('.add-section-btn');
-    // NEW: Summary elements
     const summaryBox = document.querySelector('.summary-section-box');
     const summaryNotes = document.getElementById('summaryNotes');
 
@@ -39,7 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         return total;
     };
-
+    
+    // --- Section & Item Creation ---
     const createSection = (providerIndex, title, pairId, row, notes = '') => {
         const sectionEl = document.createElement('div');
         sectionEl.className = 'section-box';
@@ -58,14 +58,13 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="section-footer">
                 <div class="savings-panel">
-                    <button class="calculate-savings-btn" title="Compare Category">CC</button> <!-- CHANGED: Text to CC -->
+                    <button class="calculate-savings-btn" title="Compare Category">CC</button>
                     <span class="savings-display"></span>
                 </div>
                 <div class="comparison-display-panel"></div>
             </div>
             <div class="notes-section"><textarea placeholder="Notes...">${notes}</textarea></div>
         `;
-        // REWORKED: Delete handler now removes only the single element
         sectionEl.querySelector('.delete-section-btn').addEventListener('click', () => { 
             if (confirm('Are you sure you want to delete this category?')) { 
                 sectionEl.remove();
@@ -102,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDisplays();
     };
 
+    // --- Core Display & Calculation Logic ---
     const updateDisplays = () => {
         let p1Total = 0, p2Total = 0;
         if (isComparisonModeActive) {
@@ -120,47 +120,57 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             summaryTitle.textContent = "Summary & Grand Totals";
         }
-        const monthlyDiff = p2Total - p1Total;
+
+        // REWORKED: Summary logic to be You - TELUS
+        const monthlySavings = p1Total - p2Total;
         p1TotalSpan.textContent = `$${p1Total.toFixed(2)}`;
         p2TotalSpan.textContent = `$${p2Total.toFixed(2)}`;
-        monthlyDiffSpan.textContent = `$${monthlyDiff.toFixed(2)}`;
-        monthlyDiffSpan.className = 'summary-total highlight colspan-2';
-        if (monthlyDiff < 0) monthlyDiffSpan.classList.add('negative');
-        yearlyDiffSpan.textContent = `$${(monthlyDiff * 12).toFixed(2)}`;
-        yearlyDiffSpan.className = 'summary-total colspan-2';
-        if (monthlyDiff < 0) yearlyDiffSpan.classList.add('negative');
-        threeYearDiffSpan.textContent = `$${(monthlyDiff * 36).toFixed(2)}`;
-        threeYearDiffSpan.className = 'summary-total colspan-2';
-        if (monthlyDiff < 0) threeYearDiffSpan.classList.add('negative');
+        
+        const formatSavings = (amount) => {
+            const sign = amount > 0 ? '+' : '';
+            return `${sign}$${amount.toFixed(2)}`;
+        };
 
-        // NEW: Toggle attention-grabbing class if Provider 2 (TELUS) is cheaper
-        summaryBox.classList.toggle('has-savings', monthlyDiff < 0);
+        monthlyDiffSpan.textContent = formatSavings(monthlySavings);
+        monthlyDiffSpan.className = `summary-total highlight colspan-2 ${monthlySavings > 0 ? 'savings' : 'loss'}`;
+
+        yearlyDiffSpan.textContent = formatSavings(monthlySavings * 12);
+        yearlyDiffSpan.className = `summary-total colspan-2 ${monthlySavings > 0 ? 'savings' : 'loss'}`;
+
+        threeYearDiffSpan.textContent = formatSavings(monthlySavings * 36);
+        threeYearDiffSpan.className = `summary-total colspan-2 ${monthlySavings > 0 ? 'savings' : 'loss'}`;
+
+        summaryBox.classList.toggle('has-savings', monthlySavings > 0);
     };
     
+    // REWORKED: Simplified comparison panel text
     const updateComparisonPanels = (p1GroupTotal, p2GroupTotal) => {
-        const p1Name = p1NameInput.value || 'Provider 1';
         const p2Name = p2NameInput.value || 'Provider 2';
+        const savings = p1GroupTotal - p2GroupTotal;
+        let resultHTML = '';
+
+        if (savings > 0) {
+            resultHTML = `<div class="result savings-positive">${p2Name} is $${savings.toFixed(2)} cheaper</div>`;
+        } else if (savings < 0) {
+            resultHTML = `<div class="result savings-negative">${p2Name} is $${Math.abs(savings).toFixed(2)} more expensive</div>`;
+        } else {
+            resultHTML = `<div class="result">Costs are equal</div>`;
+        }
+        
         document.querySelectorAll('.section-box.is-selected, .section-box.is-pinned').forEach(box => {
             const panel = box.querySelector('.comparison-display-panel');
-            const diff = p2GroupTotal - p1GroupTotal;
-            let resultHTML = '';
-            if (diff > 0) { resultHTML = `<div class="result savings-positive">Result: ${p1Name} is $${diff.toFixed(2)} cheaper</div>`; }
-            else if (diff < 0) { resultHTML = `<div class="result savings-positive">Result: ${p2Name} is $${Math.abs(diff).toFixed(2)} cheaper</div>`; }
-            else { resultHTML = `<div class="result">Result: Costs are equal</div>`; }
-            panel.innerHTML = `
-                <div><strong>${p1Name} Group:</strong> $${p1GroupTotal.toFixed(2)}</div>
-                <div><strong>${p2Name} Group:</strong> $${p2GroupTotal.toFixed(2)}</div>
-                ${resultHTML}
-            `;
+            panel.innerHTML = `${resultHTML} <button class="clear-result-btn" title="Clear this result">×</button>`;
         });
     };
 
+    // --- Event Handlers ---
     const handleSectionClick = (e) => {
         if (!isComparisonModeActive || e.target.closest('button, input, textarea')) return;
         e.currentTarget.classList.toggle('is-selected');
         updateDisplays();
     };
 
+    // REWORKED: Adds clear button to simple compare result
     const handleSimpleCompare = (e) => {
         e.stopPropagation();
         if (isComparisonModeActive) { alert("Exit Custom Comparison mode to use this feature."); return; }
@@ -168,12 +178,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetSection = document.querySelector(`.section-box[data-pair-id="${sourceSection.dataset.pairId}"][data-provider="${sourceSection.dataset.provider === '1' ? '2' : '1'}"]`);
         const cost1 = getSectionCost(sourceSection);
         const cost2 = getSectionCost(targetSection);
-        const diff = cost1 - cost2; // Use cost2 directly, getSectionCost handles null target
+        const diff = cost1 - cost2;
         const display = sourceSection.querySelector('.savings-display');
+        
         display.classList.remove('savings-positive', 'savings-negative');
-        if (diff > 0) { display.textContent = `$${diff.toFixed(2)} more expensive`; display.classList.add('savings-negative'); }
-        else if (diff < 0) { display.textContent = `$${Math.abs(diff).toFixed(2)} cheaper`; display.classList.add('savings-positive'); }
-        else { display.textContent = 'Equal cost'; }
+        let text = '';
+        if (diff > 0) { text = `$${diff.toFixed(2)} more expensive`; display.classList.add('savings-negative'); }
+        else if (diff < 0) { text = `$${Math.abs(diff).toFixed(2)} cheaper`; display.classList.add('savings-positive'); }
+        else { text = 'Equal cost'; }
+        
+        display.innerHTML = `<span>${text}</span> <button class="clear-result-btn" title="Clear this result">×</button>`;
     };
     
     comparisonModeBtn.addEventListener('click', () => {
@@ -189,14 +203,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     box.classList.remove('is-selected');
                     box.classList.add('is-pinned');
                 });
-                clearPinnedBtn.classList.remove('hidden');
+                checkPinnedStatus();
             } else {
                 selectedBoxes.forEach(box => box.classList.remove('is-selected'));
             }
             comparisonModeBtn.textContent = "[ Start Custom Comparison ]";
         }
         updateDisplays();
-    });
+    };
+
+    // NEW: Checks if any pinned items exist to show/hide the main clear button
+    const checkPinnedStatus = () => {
+        const anyPinned = document.querySelector('.section-box.is-pinned');
+        clearPinnedBtn.classList.toggle('hidden', !anyPinned);
+    };
 
     const handleAddSection = (e) => {
         pairCounter++;
@@ -215,9 +235,31 @@ document.addEventListener('DOMContentLoaded', () => {
             box.classList.remove('is-pinned');
             box.querySelector('.comparison-display-panel').innerHTML = '';
         });
-        clearPinnedBtn.classList.add('hidden');
+        checkPinnedStatus();
     };
     clearPinnedBtn.addEventListener('click', clearPinnedResults);
+
+    // NEW: Event Delegation for individual clear buttons
+    sectionsGrid.addEventListener('click', (e) => {
+        if (e.target.matches('.clear-result-btn')) {
+            const sectionBox = e.target.closest('.section-box');
+            if (!sectionBox) return;
+
+            // Case 1: Clearing a simple CC result
+            const savingsDisplay = e.target.closest('.savings-display');
+            if (savingsDisplay) {
+                savingsDisplay.innerHTML = '';
+            }
+
+            // Case 2: Clearing a single pinned result
+            const panel = e.target.closest('.comparison-display-panel');
+            if (panel) {
+                sectionBox.classList.remove('is-pinned');
+                panel.innerHTML = '';
+                checkPinnedStatus(); // Check if the main clear button should be hidden
+            }
+        }
+    });
 
     sectionsGrid.addEventListener('input', (e) => {
         if (e.target.matches('.value-input, .cost-checkbox, .section-title-input, textarea')) {
@@ -229,10 +271,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const saveState = () => {
         const data = {
-            provider1Name: p1NameInput.value,
-            provider2Name: p2NameInput.value,
-            summaryNotes: summaryNotes.value, // NEW: Save summary notes
-            categories: []
+            provider1Name: p1NameInput.value, provider2Name: p2NameInput.value,
+            summaryNotes: summaryNotes.value, categories: []
         };
         const sectionBoxes = document.querySelectorAll('.section-box');
         const usedPairIds = new Set();
@@ -262,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pairCounter = data.pairCounter || 0;
         p1NameInput.value = data.provider1Name || 'Provider 1';
         p2NameInput.value = data.provider2Name || 'Provider 2';
-        summaryNotes.value = data.summaryNotes || ''; // NEW: Load summary notes
+        summaryNotes.value = data.summaryNotes || '';
         data.categories.forEach(cat => {
             const newSection = createSection(cat.provider, cat.title, cat.pairId, cat.gridRow || 'auto', cat.notes);
             const itemsContainer = newSection.querySelector('.dynamic-items-container');
@@ -292,13 +332,9 @@ document.addEventListener('DOMContentLoaded', () => {
         p1NameInput.value = 'You'; 
         p2NameInput.value = 'TELUS';
         summaryNotes.value = '';
-
-        // NEW: Added back streaming and security
         const initialPairs = [
-            { p1Title: 'Mobility', p2Title: 'Mobility' },
-            { p1Title: 'Internet/TV', p2Title: 'Internet' },
-            { p1Title: 'Streaming', p2Title: 'Streaming' },
-            { p1Title: 'Security', p2Title: 'Security' }
+            { p1Title: 'Mobility', p2Title: 'Mobility' }, { p1Title: 'Internet/TV', p2Title: 'Internet' },
+            { p1Title: 'Streaming', p2Title: 'Streaming' }, { p1Title: 'Security', p2Title: 'Security' }
         ];
         initialPairs.forEach((pair, index) => {
             pairCounter++;
