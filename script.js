@@ -121,29 +121,27 @@ document.addEventListener('DOMContentLoaded', () => {
             summaryTitle.textContent = "Summary & Grand Totals";
         }
 
-        // REWORKED: Summary logic to be You - TELUS
         const monthlySavings = p1Total - p2Total;
         p1TotalSpan.textContent = `$${p1Total.toFixed(2)}`;
         p2TotalSpan.textContent = `$${p2Total.toFixed(2)}`;
         
         const formatSavings = (amount) => {
-            const sign = amount > 0 ? '+' : '';
+            const sign = amount >= 0 ? '+' : ''; // Show + for savings and zero
             return `${sign}$${amount.toFixed(2)}`;
         };
 
         monthlyDiffSpan.textContent = formatSavings(monthlySavings);
-        monthlyDiffSpan.className = `summary-total highlight colspan-2 ${monthlySavings > 0 ? 'savings' : 'loss'}`;
+        monthlyDiffSpan.className = `summary-total highlight colspan-2 ${monthlySavings >= 0 ? 'savings' : 'loss'}`;
 
         yearlyDiffSpan.textContent = formatSavings(monthlySavings * 12);
-        yearlyDiffSpan.className = `summary-total colspan-2 ${monthlySavings > 0 ? 'savings' : 'loss'}`;
+        yearlyDiffSpan.className = `summary-total colspan-2 ${monthlySavings >= 0 ? 'savings' : 'loss'}`;
 
         threeYearDiffSpan.textContent = formatSavings(monthlySavings * 36);
-        threeYearDiffSpan.className = `summary-total colspan-2 ${monthlySavings > 0 ? 'savings' : 'loss'}`;
+        threeYearDiffSpan.className = `summary-total colspan-2 ${monthlySavings >= 0 ? 'savings' : 'loss'}`;
 
         summaryBox.classList.toggle('has-savings', monthlySavings > 0);
     };
     
-    // REWORKED: Simplified comparison panel text
     const updateComparisonPanels = (p1GroupTotal, p2GroupTotal) => {
         const p2Name = p2NameInput.value || 'Provider 2';
         const savings = p1GroupTotal - p2GroupTotal;
@@ -170,7 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDisplays();
     };
 
-    // REWORKED: Adds clear button to simple compare result
     const handleSimpleCompare = (e) => {
         e.stopPropagation();
         if (isComparisonModeActive) { alert("Exit Custom Comparison mode to use this feature."); return; }
@@ -212,7 +209,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDisplays();
     };
 
-    // NEW: Checks if any pinned items exist to show/hide the main clear button
     const checkPinnedStatus = () => {
         const anyPinned = document.querySelector('.section-box.is-pinned');
         clearPinnedBtn.classList.toggle('hidden', !anyPinned);
@@ -239,24 +235,19 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     clearPinnedBtn.addEventListener('click', clearPinnedResults);
 
-    // NEW: Event Delegation for individual clear buttons
     sectionsGrid.addEventListener('click', (e) => {
         if (e.target.matches('.clear-result-btn')) {
             const sectionBox = e.target.closest('.section-box');
             if (!sectionBox) return;
-
-            // Case 1: Clearing a simple CC result
             const savingsDisplay = e.target.closest('.savings-display');
             if (savingsDisplay) {
                 savingsDisplay.innerHTML = '';
             }
-
-            // Case 2: Clearing a single pinned result
             const panel = e.target.closest('.comparison-display-panel');
             if (panel) {
                 sectionBox.classList.remove('is-pinned');
                 panel.innerHTML = '';
-                checkPinnedStatus(); // Check if the main clear button should be hidden
+                checkPinnedStatus();
             }
         }
     });
@@ -322,6 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDataBtn.addEventListener('click', loadState);
     clearDataBtn.addEventListener('click', clearAllData);
     
+    // --- Init ---
     const init = (isReset = false) => {
         if (!isReset && localStorage.getItem('tChartData')) {
             loadState();
@@ -332,16 +324,22 @@ document.addEventListener('DOMContentLoaded', () => {
         p1NameInput.value = 'You'; 
         p2NameInput.value = 'TELUS';
         summaryNotes.value = '';
+
+        // FIX: Added the default categories back into the init function
         const initialPairs = [
-            { p1Title: 'Mobility', p2Title: 'Mobility' }, { p1Title: 'Internet/TV', p2Title: 'Internet' },
-            { p1Title: 'Streaming', p2Title: 'Streaming' }, { p1Title: 'Security', p2Title: 'Security' }
+            { p1Title: 'Mobility', p2Title: 'Mobility' }, 
+            { p1Title: 'Internet/TV', p2Title: 'Internet' },
+            { p1Title: 'Streaming', p2Title: 'Streaming' }, 
+            { p1Title: 'Security', p2Title: 'Security' }
         ];
+
         initialPairs.forEach((pair, index) => {
             pairCounter++;
             const row = index + 1;
             createSection(1, pair.p1Title, `p${pairCounter}`, row);
             createSection(2, pair.p2Title, `p${pairCounter}`, row);
         });
+        
         updateDisplays();
     };
     
